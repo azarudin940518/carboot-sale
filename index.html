@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Carboot PRO - V26 MUKTAMAD</title>
+    <title>POS Carboot PRO - V27 FINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .sold-out { 
@@ -35,9 +35,9 @@
         <header class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
             <div>
                 <h1 class="text-2xl font-black text-yellow-400 italic">CARBOOT POS</h1>
-                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v26.0 • GitHub Hosted</p>
+                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v27.0 • Auto-Refresh Ready</p>
             </div>
-            <button onclick="fetchInventory()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold active:scale-95 text-white uppercase">Refresh</button>
+            <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold active:scale-95 text-white uppercase italic">Refresh Manual</button>
         </header>
 
         <input type="text" id="searchInput" onkeyup="renderItems()" placeholder="Cari Kod (Cth: L1)..." 
@@ -49,15 +49,15 @@
     <div class="fixed bottom-0 left-0 right-0 bg-slate-800 p-5 border-t-4 border-yellow-500 z-[200] max-w-md mx-auto rounded-t-[2.5rem] shadow-2xl">
         <div class="grid grid-cols-3 gap-2 mb-4 text-center font-mono">
             <div class="bg-slate-900 p-2 rounded-xl border border-slate-700">
-                <span class="text-[8px] block text-slate-500 font-black">SUBTOTAL</span>
+                <span class="text-[8px] block text-slate-500 font-black uppercase">Subtotal</span>
                 <span id="subTotalDisplay" class="text-sm font-bold text-slate-300">RM 0.00</span>
             </div>
             <div class="bg-slate-900 p-2 rounded-xl border border-red-900/50">
-                <span class="text-[8px] block text-red-500 font-black">DISKAUN</span>
+                <span class="text-[8px] block text-red-500 font-black uppercase">Diskaun</span>
                 <span id="discountDisplay" class="text-sm font-bold text-red-400">-RM 0.00</span>
             </div>
             <div class="bg-slate-900 p-2 rounded-xl border border-green-900/50">
-                <span class="text-[8px] block text-green-500 font-black">TOTAL</span>
+                <span class="text-[8px] block text-green-500 font-black uppercase">Total</span>
                 <span id="grandTotal" class="text-lg font-black text-yellow-400">RM 0.00</span>
             </div>
         </div>
@@ -69,17 +69,16 @@
             </div>
             <div class="relative">
                 <span class="absolute top-1 left-3 text-[8px] font-bold text-slate-500 uppercase italic">Tunai RM</span>
-                <input type="number" id="cashInput" oninput="calculate()" placeholder="0" class="w-full bg-white text-slate-900 rounded-xl px-4 pt-5 pb-2 text-center font-black outline-none">
+                <input type="number" id="cashInput" oninput="calculate()" placeholder="0" class="w-full bg-white text-slate-900 rounded-xl px-4 pt-5 pb-2 text-center font-black outline-none font-mono">
             </div>
         </div>
 
         <button id="btnCheckout" onclick="submitSale()" class="w-full bg-yellow-500 text-slate-900 font-black py-4 rounded-2xl shadow-xl text-xl uppercase active:scale-95 border-b-4 border-yellow-700 transition-all">
-            SIMPAN... <span id="changeAmt" class="block text-[10px] font-normal lowercase italic">Baki: RM 0.00</span>
+            SIMPAN JUALAN <span id="changeAmt" class="block text-[10px] font-normal lowercase italic">Baki: RM 0.00</span>
         </button>
     </div>
 
     <script>
-        // PASTIKAN URL INI ADALAH URL WEB APP ANDA YANG BETUL
         const API_URL = "https://script.google.com/macros/s/AKfycbz-ucnu4gWqlteYtL4WJQDOu5BUIjsyoRKfI66mltT_ZO282qGGRETZ_yZ6r6FBFo-LLQ/exec";
         
         let inventory = [];
@@ -91,7 +90,7 @@
                 const res = await fetch(API_URL);
                 inventory = await res.json();
                 renderItems();
-            } catch (e) { console.error("Gagal ambil data."); }
+            } catch (e) { console.error("Ralat tarik data."); }
         }
 
         function renderItems() {
@@ -116,7 +115,7 @@
                                 <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black font-mono uppercase">Stok: ${bakiSkrin}</span>
                             </div>
                             <h3 class="font-bold text-slate-100 uppercase text-xs mt-1 truncate w-40">${item.nama}</h3>
-                            <p class="text-xl font-black text-yellow-400 mt-1">RM ${parseFloat(item.harga).toFixed(2)}</p>
+                            <p class="text-xl font-black text-yellow-400 mt-1 font-mono">RM ${parseFloat(item.harga).toFixed(2)}</p>
                         </div>
                         <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
                             <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-slate-700 text-white font-black rounded-lg active:scale-90">-</button>
@@ -131,8 +130,9 @@
             const itemOrig = inventory.find(i => `${i.kod}-${i.saiz}` === id);
             if (!itemOrig) return;
             if (!cart[id]) { cart[id] = { ...itemOrig, qty: 0 }; }
+            
             if (val > 0 && cart[id].qty >= itemOrig.stok) {
-                alert("Stok tidak mencukupi!");
+                alert("Stok Habis!");
                 return;
             }
             cart[id].qty += val;
@@ -147,6 +147,7 @@
             const disc = parseFloat(document.getElementById('discountInput').value) || 0;
             const cash = parseFloat(document.getElementById('cashInput').value) || 0;
             const net = Math.max(0, sub - disc);
+            
             document.getElementById('subTotalDisplay').innerText = `RM ${sub.toFixed(2)}`;
             document.getElementById('discountDisplay').innerText = `-RM ${disc.toFixed(2)}`;
             document.getElementById('grandTotal').innerText = `RM ${net.toFixed(2)}`;
@@ -159,7 +160,7 @@
 
             isProcessing = true;
             const btn = document.getElementById('btnCheckout');
-            btn.innerText = "MENYIMPAN...";
+            btn.innerText = "PROSES SIMPAN...";
             btn.disabled = true;
 
             const payload = itemsInCart.map(i => ({
@@ -172,30 +173,22 @@
             }));
 
             try {
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                setTimeout(async () => {
+                await fetch(API_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify(payload) 
+                });
+                
+                setTimeout(() => {
                     alert("JUALAN BERJAYA!");
-                    resetAll(); 
-                    await fetchInventory(); 
-                    isProcessing = false;
-                    btn.disabled = false;
-                    btn.innerHTML = `SIMPAN... <span id="changeAmt" class="block text-[10px] font-normal lowercase italic">Baki: RM 0.00</span>`;
-                }, 1000);
-            } catch (e) {
-                resetAll(); await fetchInventory();
-                isProcessing = false; btn.disabled = false;
-            }
-        }
+                    location.reload(); 
+                }, 1500);
 
-        function resetAll() {
-            cart = {};
-            document.getElementById('discountInput').value = '';
-            document.getElementById('cashInput').value = '';
-            document.getElementById('subTotalDisplay').innerText = "RM 0.00";
-            document.getElementById('discountDisplay').innerText = "-RM 0.00";
-            document.getElementById('grandTotal').innerText = "RM 0.00";
-            document.getElementById('changeAmt').innerText = "Baki: RM 0.00";
-            renderItems();
+            } catch (e) {
+                alert("Ralat! Cuba lagi.");
+                isProcessing = false;
+                btn.disabled = false;
+            }
         }
 
         fetchInventory();
