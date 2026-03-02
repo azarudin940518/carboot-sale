@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Carboot PRO - V26 MUKTAMAD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .sold-out { 
+            position: relative; 
+            opacity: 0.4; 
+            pointer-events: none !important; 
+            filter: grayscale(1);
+        }
+        .sold-out::after {
+            content: "HABIS";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            color: #ff0000;
+            font-weight: 900;
+            font-size: 2rem;
+            border: 6px solid #ff0000;
+            padding: 5px 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.9);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 p-4 pb-80 font-sans">
+
+    <div class="max-w-md mx-auto">
+        <header class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
+            <div>
+                <h1 class="text-2xl font-black text-yellow-400 italic">CARBOOT POS</h1>
+                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v26.0 • GitHub Hosted</p>
+            </div>
+            <button onclick="fetchInventory()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold active:scale-95 text-white uppercase">Refresh</button>
+        </header>
+
+        <input type="text" id="searchInput" onkeyup="renderItems()" placeholder="Cari Kod (Cth: L1)..." 
+        class="w-full bg-slate-800 border-2 border-blue-900 rounded-2xl px-5 py-4 text-lg font-black outline-none focus:border-blue-500 shadow-2xl text-white">
+
+        <div id="item-container" class="space-y-3 mt-4"></div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-slate-800 p-5 border-t-4 border-yellow-500 z-[200] max-w-md mx-auto rounded-t-[2.5rem] shadow-2xl">
+        <div class="grid grid-cols-3 gap-2 mb-4 text-center font-mono">
+            <div class="bg-slate-900 p-2 rounded-xl border border-slate-700">
+                <span class="text-[8px] block text-slate-500 font-black">SUBTOTAL</span>
+                <span id="subTotalDisplay" class="text-sm font-bold text-slate-300">RM 0.00</span>
+            </div>
+            <div class="bg-slate-900 p-2 rounded-xl border border-red-900/50">
+                <span class="text-[8px] block text-red-500 font-black">DISKAUN</span>
+                <span id="discountDisplay" class="text-sm font-bold text-red-400">-RM 0.00</span>
+            </div>
+            <div class="bg-slate-900 p-2 rounded-xl border border-green-900/50">
+                <span class="text-[8px] block text-green-500 font-black">TOTAL</span>
+                <span id="grandTotal" class="text-lg font-black text-yellow-400">RM 0.00</span>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <div class="relative">
+                <span class="absolute top-1 left-3 text-[8px] font-bold text-slate-500 uppercase italic">Potong RM</span>
+                <input type="number" id="discountInput" oninput="calculate()" placeholder="0" class="w-full bg-red-900/20 text-red-100 rounded-xl px-4 pt-5 pb-2 text-center font-black border border-red-800 outline-none">
+            </div>
+            <div class="relative">
+                <span class="absolute top-1 left-3 text-[8px] font-bold text-slate-500 uppercase italic">Tunai RM</span>
+                <input type="number" id="cashInput" oninput="calculate()" placeholder="0" class="w-full bg-white text-slate-900 rounded-xl px-4 pt-5 pb-2 text-center font-black outline-none">
+            </div>
+        </div>
+
+        <button id="btnCheckout" onclick="submitSale()" class="w-full bg-yellow-500 text-slate-900 font-black py-4 rounded-2xl shadow-xl text-xl uppercase active:scale-95 border-b-4 border-yellow-700 transition-all">
+            SIMPAN... <span id="changeAmt" class="block text-[10px] font-normal lowercase italic">Baki: RM 0.00</span>
+        </button>
+    </div>
+
+    <script>
+        // PASTIKAN URL INI ADALAH URL WEB APP ANDA YANG BETUL
+        const API_URL = "https://script.google.com/macros/s/AKfycbz-ucnu4gWqlteYtL4WJQDOu5BUIjsyoRKfI66mltT_ZO282qGGRETZ_yZ6r6FBFo-LLQ/exec";
+        
+        let inventory = [];
+        let cart = {}; 
+        let isProcessing = false;
+
+        async function fetchInventory() {
+            try {
+                const res = await fetch(API_URL);
+                inventory = await res.json();
+                renderItems();
+            } catch (e) { console.error("Gagal ambil data."); }
+        }
+
+        function renderItems() {
+            const container = document.getElementById('item-container');
+            const search = document.getElementById('searchInput').value.trim().toUpperCase();
+            container.innerHTML = '';
+
+            const filtered = inventory.filter(item => search === "" ? true : item.kod.toString().toUpperCase() === search);
+
+            filtered.forEach(item => {
+                const id = `${item.kod}-${item.saiz}`;
+                const qInCart = cart[id] ? cart[id].qty : 0;
+                const originalStock = parseInt(item.stok) || 0;
+                const bakiSkrin = originalStock - qInCart;
+                const isSoldOut = originalStock <= 0;
+
+                container.innerHTML += `
+                    <div class="bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-slate-700 ${isSoldOut ? 'sold-out' : ''}">
+                        <div>
+                            <div class="flex gap-2 mb-1">
+                                <span class="text-[10px] bg-blue-900 text-blue-100 px-2 py-0.5 rounded font-black font-mono">#${item.kod} SZ:${item.saiz}</span>
+                                <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black font-mono uppercase">Stok: ${bakiSkrin}</span>
+                            </div>
+                            <h3 class="font-bold text-slate-100 uppercase text-xs mt-1 truncate w-40">${item.nama}</h3>
+                            <p class="text-xl font-black text-yellow-400 mt-1">RM ${parseFloat(item.harga).toFixed(2)}</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
+                            <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-slate-700 text-white font-black rounded-lg active:scale-90">-</button>
+                            <span class="w-6 text-center font-black text-blue-400 text-lg">${qInCart}</span>
+                            <button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-blue-600 text-white font-black rounded-lg active:scale-90" ${bakiSkrin <= 0 ? 'disabled opacity-20' : ''}>+</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function updateQty(id, val) {
+            const itemOrig = inventory.find(i => `${i.kod}-${i.saiz}` === id);
+            if (!itemOrig) return;
+            if (!cart[id]) { cart[id] = { ...itemOrig, qty: 0 }; }
+            if (val > 0 && cart[id].qty >= itemOrig.stok) {
+                alert("Stok tidak mencukupi!");
+                return;
+            }
+            cart[id].qty += val;
+            if (cart[id].qty <= 0) delete cart[id];
+            renderItems();
+            calculate();
+        }
+
+        function calculate() {
+            let sub = 0;
+            Object.values(cart).forEach(i => sub += (i.qty * parseFloat(i.harga)));
+            const disc = parseFloat(document.getElementById('discountInput').value) || 0;
+            const cash = parseFloat(document.getElementById('cashInput').value) || 0;
+            const net = Math.max(0, sub - disc);
+            document.getElementById('subTotalDisplay').innerText = `RM ${sub.toFixed(2)}`;
+            document.getElementById('discountDisplay').innerText = `-RM ${disc.toFixed(2)}`;
+            document.getElementById('grandTotal').innerText = `RM ${net.toFixed(2)}`;
+            document.getElementById('changeAmt').innerText = `Baki: RM ${(cash - net > 0 ? cash - net : 0).toFixed(2)}`;
+        }
+
+        async function submitSale() {
+            const itemsInCart = Object.values(cart);
+            if (itemsInCart.length === 0 || isProcessing) return;
+
+            isProcessing = true;
+            const btn = document.getElementById('btnCheckout');
+            btn.innerText = "MENYIMPAN...";
+            btn.disabled = true;
+
+            const payload = itemsInCart.map(i => ({
+                kod: i.kod,
+                saiz_asal: i.saiz, 
+                nama: i.nama,
+                qty: i.qty,
+                subtotal: (i.qty * parseFloat(i.harga)),
+                nota: (parseFloat(document.getElementById('discountInput').value) || 0) > 0 ? `(Disc: RM${document.getElementById('discountInput').value})` : "-"
+            }));
+
+            try {
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                setTimeout(async () => {
+                    alert("JUALAN BERJAYA!");
+                    resetAll(); 
+                    await fetchInventory(); 
+                    isProcessing = false;
+                    btn.disabled = false;
+                    btn.innerHTML = `SIMPAN... <span id="changeAmt" class="block text-[10px] font-normal lowercase italic">Baki: RM 0.00</span>`;
+                }, 1000);
+            } catch (e) {
+                resetAll(); await fetchInventory();
+                isProcessing = false; btn.disabled = false;
+            }
+        }
+
+        function resetAll() {
+            cart = {};
+            document.getElementById('discountInput').value = '';
+            document.getElementById('cashInput').value = '';
+            document.getElementById('subTotalDisplay').innerText = "RM 0.00";
+            document.getElementById('discountDisplay').innerText = "-RM 0.00";
+            document.getElementById('grandTotal').innerText = "RM 0.00";
+            document.getElementById('changeAmt').innerText = "Baki: RM 0.00";
+            renderItems();
+        }
+
+        fetchInventory();
+    </script>
+</body>
+</html>
