@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Carboot PRO - V31.0</title>
+    <title>POS Carboot PRO - V32.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .sold-out { position: relative; opacity: 0.4; pointer-events: none; filter: grayscale(1); }
-        .sold-out::after { 
-            content: "HABIS"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); 
-            color: #ff0000; font-weight: 900; font-size: 2rem; border: 6px solid #ff0000; padding: 5px 20px; 
-            z-index: 100; background: rgba(0,0,0,0.9); white-space: nowrap;
+        .sold-out { position: relative; opacity: 0.4; pointer-events: none !important; filter: grayscale(1); }
+        .sold-out::after {
+            content: "HABIS"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
+            color: #ff0000; font-weight: 900; font-size: 2rem; border: 6px solid #ff0000; padding: 5px 20px; z-index: 100;
+            background: rgba(0,0,0,0.9); white-space: nowrap;
         }
     </style>
 </head>
@@ -20,9 +20,9 @@
         <header class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
             <div>
                 <h1 class="text-2xl font-black text-yellow-400 italic">CARBOOT POS</h1>
-                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v31.0 • Final Sync</p>
+                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v32.0 • Fix Selection</p>
             </div>
-            <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold text-white uppercase active:scale-95">Refresh</button>
+            <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold text-white uppercase">Refresh</button>
         </header>
 
         <input type="text" id="searchInput" onkeyup="renderItems()" placeholder="Cari Kod (Cth: L1)..." 
@@ -75,9 +75,15 @@
             const container = document.getElementById('item-container');
             const search = document.getElementById('searchInput').value.trim().toUpperCase();
             container.innerHTML = '';
-            const filtered = inventory.filter(item => search === "" ? true : item.kod.toString().toUpperCase() === search);
+            
+            // Filter yang lebih tepat supaya tak "select semua"
+            const filtered = inventory.filter(item => {
+                if (search === "") return true;
+                return item.kod.toString().toUpperCase().includes(search);
+            });
 
             filtered.forEach(item => {
+                // ID unik gabungan Kod dan Saiz
                 const id = `${item.kod}-${item.saiz}`;
                 const qInCart = cart[id] ? cart[id].qty : 0;
                 const originalStock = parseInt(item.stok) || 0;
@@ -89,27 +95,37 @@
                         <div>
                             <div class="flex gap-2 mb-1">
                                 <span class="text-[10px] bg-blue-900 text-blue-100 px-2 py-0.5 rounded font-black font-mono">#${item.kod} SZ:${item.saiz}</span>
-                                <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black uppercase">Stok: ${bakiSkrin}</span>
+                                <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black">STOK: ${bakiSkrin}</span>
                             </div>
                             <h3 class="font-bold text-slate-100 uppercase text-xs truncate w-40">${item.nama}</h3>
                             <p class="text-xl font-black text-yellow-400 font-mono">RM ${parseFloat(item.harga).toFixed(2)}</p>
                         </div>
                         <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl">
-                            <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-slate-700 text-white font-black rounded-lg">-</button>
+                            <button onclick="updateQty('${item.kod}', '${item.saiz}', -1)" class="w-10 h-10 bg-slate-700 text-white font-black rounded-lg">-</button>
                             <span class="w-6 text-center font-black text-blue-400 text-lg">${qInCart}</span>
-                            <button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-blue-600 text-white font-black rounded-lg" ${bakiSkrin <= 0 ? 'disabled opacity-20' : ''}>+</button>
+                            <button onclick="updateQty('${item.kod}', '${item.saiz}', 1)" class="w-10 h-10 bg-blue-600 text-white font-black rounded-lg" ${bakiSkrin <= 0 ? 'disabled opacity-20' : ''}>+</button>
                         </div>
                     </div>`;
             });
         }
 
-        function updateQty(id, val) {
-            const itemOrig = inventory.find(i => `${i.kod}-${i.saiz}` === id);
+        function updateQty(kod, saiz, val) {
+            const id = `${kod}-${saiz}`;
+            const itemOrig = inventory.find(i => i.kod == kod && i.saiz == saiz);
+            
             if (!itemOrig) return;
-            if (!cart[id]) { cart[id] = { ...itemOrig, qty: 0 }; }
-            if (val > 0 && cart[id].qty >= itemOrig.stok) return;
+            if (!cart[id]) { 
+                cart[id] = { ...itemOrig, qty: 0 }; 
+            }
+            
+            if (val > 0 && cart[id].qty >= itemOrig.stok) {
+                alert("Stok Habis!");
+                return;
+            }
+            
             cart[id].qty += val;
             if (cart[id].qty <= 0) delete cart[id];
+            
             renderItems();
             calculate();
         }
@@ -137,25 +153,22 @@
             const discVal = parseFloat(document.getElementById('discountInput').value) || 0;
             let totalKotor = 0;
             itemsInCart.forEach(i => totalKotor += (i.qty * parseFloat(i.harga)));
-            const discountFactor = totalKotor > 0 ? (totalKotor - discVal) / totalKotor : 1;
+            const factor = totalKotor > 0 ? (totalKotor - discVal) / totalKotor : 1;
 
-            const payload = itemsInCart.map(i => {
-                const subtotalBersih = (i.qty * parseFloat(i.harga)) * discountFactor;
-                return {
-                    kod: i.kod,
-                    saiz: i.saiz, 
-                    nama: i.nama,
-                    qty: i.qty,
-                    subtotal: Number(subtotalBersih.toFixed(2)), // Pastikan nombor bersih
-                    nota: discVal > 0 ? `Disc: RM${discVal}` : "-"
-                };
-            });
+            const payload = itemsInCart.map(i => ({
+                kod: i.kod,
+                saiz: i.saiz, 
+                nama: i.nama,
+                qty: i.qty,
+                subtotal: Number((i.qty * parseFloat(i.harga) * factor).toFixed(2)),
+                nota: discVal > 0 ? `Disc: RM${discVal}` : "-"
+            }));
 
             try {
                 await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
                 setTimeout(() => { alert("JUALAN BERJAYA!"); location.reload(); }, 1500);
             } catch (e) {
-                alert("Ralat sambungan!"); isProcessing = false; btn.disabled = false;
+                alert("Ralat!"); isProcessing = false; btn.disabled = false;
             }
         }
         fetchInventory();
