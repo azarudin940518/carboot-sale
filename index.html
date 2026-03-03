@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Carboot PRO - V32.0</title>
+    <title>POS Carboot PRO - V33.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .sold-out { position: relative; opacity: 0.4; pointer-events: none !important; filter: grayscale(1); }
@@ -20,7 +20,7 @@
         <header class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
             <div>
                 <h1 class="text-2xl font-black text-yellow-400 italic">CARBOOT POS</h1>
-                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v32.0 • Fix Selection</p>
+                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v33.0 • Stable Edition</p>
             </div>
             <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold text-white uppercase">Refresh</button>
         </header>
@@ -76,18 +76,19 @@
             const search = document.getElementById('searchInput').value.trim().toUpperCase();
             container.innerHTML = '';
             
-            // Filter yang lebih tepat supaya tak "select semua"
             const filtered = inventory.filter(item => {
                 if (search === "") return true;
-                return item.kod.toString().toUpperCase().includes(search);
+                return item.kod.toString().toUpperCase() === search;
             });
 
             filtered.forEach(item => {
-                // ID unik gabungan Kod dan Saiz
-                const id = `${item.kod}-${item.saiz}`;
-                const qInCart = cart[id] ? cart[id].qty : 0;
+                // Kunci UNIK: Gabungan KOD dan SAIZ
+                const uniqueKey = `${item.kod}-${item.saiz}`;
+                const qInCart = cart[uniqueKey] ? cart[uniqueKey].qty : 0;
                 const originalStock = parseInt(item.stok) || 0;
                 const bakiSkrin = originalStock - qInCart;
+                
+                // SOLD OUT jika stok asal di Sheets ialah 0 atau kurang
                 const isSoldOut = originalStock <= 0;
 
                 container.innerHTML += `
@@ -95,7 +96,7 @@
                         <div>
                             <div class="flex gap-2 mb-1">
                                 <span class="text-[10px] bg-blue-900 text-blue-100 px-2 py-0.5 rounded font-black font-mono">#${item.kod} SZ:${item.saiz}</span>
-                                <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black">STOK: ${bakiSkrin}</span>
+                                <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black uppercase">Stok: ${bakiSkrin}</span>
                             </div>
                             <h3 class="font-bold text-slate-100 uppercase text-xs truncate w-40">${item.nama}</h3>
                             <p class="text-xl font-black text-yellow-400 font-mono">RM ${parseFloat(item.harga).toFixed(2)}</p>
@@ -110,21 +111,21 @@
         }
 
         function updateQty(kod, saiz, val) {
-            const id = `${kod}-${saiz}`;
+            const uniqueKey = `${kod}-${saiz}`;
             const itemOrig = inventory.find(i => i.kod == kod && i.saiz == saiz);
             
             if (!itemOrig) return;
-            if (!cart[id]) { 
-                cart[id] = { ...itemOrig, qty: 0 }; 
+            if (!cart[uniqueKey]) { 
+                cart[uniqueKey] = { ...itemOrig, qty: 0 }; 
             }
             
-            if (val > 0 && cart[id].qty >= itemOrig.stok) {
-                alert("Stok Habis!");
+            if (val > 0 && cart[uniqueKey].qty >= itemOrig.stok) {
+                alert("Stok bagi saiz ini sudah habis!");
                 return;
             }
             
-            cart[id].qty += val;
-            if (cart[id].qty <= 0) delete cart[id];
+            cart[uniqueKey].qty += val;
+            if (cart[uniqueKey].qty <= 0) delete cart[uniqueKey];
             
             renderItems();
             calculate();
@@ -168,7 +169,7 @@
                 await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
                 setTimeout(() => { alert("JUALAN BERJAYA!"); location.reload(); }, 1500);
             } catch (e) {
-                alert("Ralat!"); isProcessing = false; btn.disabled = false;
+                alert("Ralat sambungan!"); isProcessing = false; btn.disabled = false;
             }
         }
         fetchInventory();
