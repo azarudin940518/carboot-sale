@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Carboot PRO - V33.0</title>
+    <title>POS Carboot PRO - V34.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .sold-out { position: relative; opacity: 0.4; pointer-events: none !important; filter: grayscale(1); }
@@ -20,7 +20,7 @@
         <header class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
             <div>
                 <h1 class="text-2xl font-black text-yellow-400 italic">CARBOOT POS</h1>
-                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v33.0 • Stable Edition</p>
+                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v34.0 • Real-Time Sync</p>
             </div>
             <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold text-white uppercase">Refresh</button>
         </header>
@@ -56,123 +56,3 @@
             SIMPAN JUALAN <span id="changeAmt" class="block text-[10px] font-normal lowercase italic">Baki: RM 0.00</span>
         </button>
     </div>
-
-    <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwsXqtpBAFcpenKFP0wT5z87bNUiluR7f3-wN4_WAK_nnhAiQj92ieO-Qdw8S55R7lEYA/exec";
-        let inventory = [];
-        let cart = {}; 
-        let isProcessing = false;
-
-        async function fetchInventory() {
-            try {
-                const res = await fetch(API_URL);
-                inventory = await res.json();
-                renderItems();
-            } catch (e) { console.error("Error fetch data"); }
-        }
-
-        function renderItems() {
-            const container = document.getElementById('item-container');
-            const search = document.getElementById('searchInput').value.trim().toUpperCase();
-            container.innerHTML = '';
-            
-            const filtered = inventory.filter(item => {
-                if (search === "") return true;
-                return item.kod.toString().toUpperCase() === search;
-            });
-
-            filtered.forEach(item => {
-                // Kunci UNIK: Gabungan KOD dan SAIZ
-                const uniqueKey = `${item.kod}-${item.saiz}`;
-                const qInCart = cart[uniqueKey] ? cart[uniqueKey].qty : 0;
-                const originalStock = parseInt(item.stok) || 0;
-                const bakiSkrin = originalStock - qInCart;
-                
-                // SOLD OUT jika stok asal di Sheets ialah 0 atau kurang
-                const isSoldOut = originalStock <= 0;
-
-                container.innerHTML += `
-                    <div class="bg-slate-800 p-4 rounded-2xl flex justify-between items-center border border-slate-700 ${isSoldOut ? 'sold-out' : ''}">
-                        <div>
-                            <div class="flex gap-2 mb-1">
-                                <span class="text-[10px] bg-blue-900 text-blue-100 px-2 py-0.5 rounded font-black font-mono">#${item.kod} SZ:${item.saiz}</span>
-                                <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black uppercase">Stok: ${bakiSkrin}</span>
-                            </div>
-                            <h3 class="font-bold text-slate-100 uppercase text-xs truncate w-40">${item.nama}</h3>
-                            <p class="text-xl font-black text-yellow-400 font-mono">RM ${parseFloat(item.harga).toFixed(2)}</p>
-                        </div>
-                        <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl">
-                            <button onclick="updateQty('${item.kod}', '${item.saiz}', -1)" class="w-10 h-10 bg-slate-700 text-white font-black rounded-lg">-</button>
-                            <span class="w-6 text-center font-black text-blue-400 text-lg">${qInCart}</span>
-                            <button onclick="updateQty('${item.kod}', '${item.saiz}', 1)" class="w-10 h-10 bg-blue-600 text-white font-black rounded-lg" ${bakiSkrin <= 0 ? 'disabled opacity-20' : ''}>+</button>
-                        </div>
-                    </div>`;
-            });
-        }
-
-        function updateQty(kod, saiz, val) {
-            const uniqueKey = `${kod}-${saiz}`;
-            const itemOrig = inventory.find(i => i.kod == kod && i.saiz == saiz);
-            
-            if (!itemOrig) return;
-            if (!cart[uniqueKey]) { 
-                cart[uniqueKey] = { ...itemOrig, qty: 0 }; 
-            }
-            
-            if (val > 0 && cart[uniqueKey].qty >= itemOrig.stok) {
-                alert("Stok bagi saiz ini sudah habis!");
-                return;
-            }
-            
-            cart[uniqueKey].qty += val;
-            if (cart[uniqueKey].qty <= 0) delete cart[uniqueKey];
-            
-            renderItems();
-            calculate();
-        }
-
-        function calculate() {
-            let sub = 0;
-            Object.values(cart).forEach(i => sub += (i.qty * parseFloat(i.harga)));
-            const disc = parseFloat(document.getElementById('discountInput').value) || 0;
-            const cash = parseFloat(document.getElementById('cashInput').value) || 0;
-            const net = Math.max(0, sub - disc);
-            document.getElementById('subTotalDisplay').innerText = `RM ${sub.toFixed(2)}`;
-            document.getElementById('discountDisplay').innerText = `-RM ${disc.toFixed(2)}`;
-            document.getElementById('grandTotal').innerText = `RM ${net.toFixed(2)}`;
-            document.getElementById('changeAmt').innerText = `Baki: RM ${(cash - net > 0 ? cash - net : 0).toFixed(2)}`;
-        }
-
-        async function submitSale() {
-            const itemsInCart = Object.values(cart);
-            if (itemsInCart.length === 0 || isProcessing) return;
-            isProcessing = true;
-            const btn = document.getElementById('btnCheckout');
-            btn.innerText = "SIMPAN...";
-            btn.disabled = true;
-
-            const discVal = parseFloat(document.getElementById('discountInput').value) || 0;
-            let totalKotor = 0;
-            itemsInCart.forEach(i => totalKotor += (i.qty * parseFloat(i.harga)));
-            const factor = totalKotor > 0 ? (totalKotor - discVal) / totalKotor : 1;
-
-            const payload = itemsInCart.map(i => ({
-                kod: i.kod,
-                saiz: i.saiz, 
-                nama: i.nama,
-                qty: i.qty,
-                subtotal: Number((i.qty * parseFloat(i.harga) * factor).toFixed(2)),
-                nota: discVal > 0 ? `Disc: RM${discVal}` : "-"
-            }));
-
-            try {
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                setTimeout(() => { alert("JUALAN BERJAYA!"); location.reload(); }, 1500);
-            } catch (e) {
-                alert("Ralat sambungan!"); isProcessing = false; btn.disabled = false;
-            }
-        }
-        fetchInventory();
-    </script>
-</body>
-</html>
