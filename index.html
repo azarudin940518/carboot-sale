@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Carboot PRO - V27 FINAL</title>
+    <title>POS Carboot PRO - V28.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .sold-out { 
@@ -35,9 +35,9 @@
         <header class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
             <div>
                 <h1 class="text-2xl font-black text-yellow-400 italic">CARBOOT POS</h1>
-                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v27.0 • Auto-Refresh Ready</p>
+                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v28.0 • Accurate Report</p>
             </div>
-            <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold active:scale-95 text-white uppercase italic">Refresh Manual</button>
+            <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold active:scale-95 text-white uppercase">Refresh</button>
         </header>
 
         <input type="text" id="searchInput" onkeyup="renderItems()" placeholder="Cari Kod (Cth: L1)..." 
@@ -69,7 +69,7 @@
             </div>
             <div class="relative">
                 <span class="absolute top-1 left-3 text-[8px] font-bold text-slate-500 uppercase italic">Tunai RM</span>
-                <input type="number" id="cashInput" oninput="calculate()" placeholder="0" class="w-full bg-white text-slate-900 rounded-xl px-4 pt-5 pb-2 text-center font-black outline-none font-mono">
+                <input type="number" id="cashInput" oninput="calculate()" placeholder="0" class="w-full bg-white text-slate-900 rounded-xl px-4 pt-5 pb-2 text-center font-black outline-none">
             </div>
         </div>
 
@@ -90,7 +90,7 @@
                 const res = await fetch(API_URL);
                 inventory = await res.json();
                 renderItems();
-            } catch (e) { console.error("Ralat tarik data."); }
+            } catch (e) { console.error("Gagal tarik data."); }
         }
 
         function renderItems() {
@@ -115,7 +115,7 @@
                                 <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black font-mono uppercase">Stok: ${bakiSkrin}</span>
                             </div>
                             <h3 class="font-bold text-slate-100 uppercase text-xs mt-1 truncate w-40">${item.nama}</h3>
-                            <p class="text-xl font-black text-yellow-400 mt-1 font-mono">RM ${parseFloat(item.harga).toFixed(2)}</p>
+                            <p class="text-xl font-black text-yellow-400 mt-1">RM ${parseFloat(item.harga).toFixed(2)}</p>
                         </div>
                         <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
                             <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-slate-700 text-white font-black rounded-lg active:scale-90">-</button>
@@ -130,9 +130,8 @@
             const itemOrig = inventory.find(i => `${i.kod}-${i.saiz}` === id);
             if (!itemOrig) return;
             if (!cart[id]) { cart[id] = { ...itemOrig, qty: 0 }; }
-            
             if (val > 0 && cart[id].qty >= itemOrig.stok) {
-                alert("Stok Habis!");
+                alert("Stok tidak mencukupi!");
                 return;
             }
             cart[id].qty += val;
@@ -147,7 +146,6 @@
             const disc = parseFloat(document.getElementById('discountInput').value) || 0;
             const cash = parseFloat(document.getElementById('cashInput').value) || 0;
             const net = Math.max(0, sub - disc);
-            
             document.getElementById('subTotalDisplay').innerText = `RM ${sub.toFixed(2)}`;
             document.getElementById('discountDisplay').innerText = `-RM ${disc.toFixed(2)}`;
             document.getElementById('grandTotal').innerText = `RM ${net.toFixed(2)}`;
@@ -163,14 +161,26 @@
             btn.innerText = "PROSES SIMPAN...";
             btn.disabled = true;
 
-            const payload = itemsInCart.map(i => ({
-                kod: i.kod,
-                saiz_asal: i.saiz, 
-                nama: i.nama,
-                qty: i.qty,
-                subtotal: (i.qty * parseFloat(i.harga)),
-                nota: (parseFloat(document.getElementById('discountInput').value) || 0) > 0 ? `(Disc: RM${document.getElementById('discountInput').value})` : "-"
-            }));
+            const discVal = parseFloat(document.getElementById('discountInput').value) || 0;
+            let totalKotor = 0;
+            itemsInCart.forEach(i => totalKotor += (i.qty * parseFloat(i.harga)));
+            
+            // Faktor untuk tolak diskaun secara adil pada setiap baris item
+            const discountFactor = totalKotor > 0 ? (totalKotor - discVal) / totalKotor : 1;
+
+            const payload = itemsInCart.map(i => {
+                const hargaAsalBaris = (i.qty * parseFloat(i.harga));
+                const subtotalBersih = hargaAsalBaris * discountFactor;
+                
+                return {
+                    kod: i.kod,
+                    saiz_asal: i.saiz, 
+                    nama: i.nama,
+                    qty: i.qty,
+                    subtotal: subtotalBersih.toFixed(2), // Ini yang akan masuk ke kolum Subtotal Sheets
+                    nota: discVal > 0 ? `Disc: RM${discVal} (Asal: RM${hargaAsalBaris.toFixed(2)})` : "-"
+                };
+            });
 
             try {
                 await fetch(API_URL, { 
@@ -180,12 +190,12 @@
                 });
                 
                 setTimeout(() => {
-                    alert("JUALAN BERJAYA!");
+                    alert("BERJAYA! Stok & Laporan dikemaskini.");
                     location.reload(); 
                 }, 1500);
 
             } catch (e) {
-                alert("Ralat! Cuba lagi.");
+                alert("Ralat! Sila refresh manual.");
                 isProcessing = false;
                 btn.disabled = false;
             }
