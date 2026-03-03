@@ -3,29 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Carboot PRO - V28.0</title>
+    <title>POS Carboot PRO - V29.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .sold-out { 
-            position: relative; 
-            opacity: 0.4; 
-            pointer-events: none !important; 
-            filter: grayscale(1);
-        }
+        .sold-out { position: relative; opacity: 0.4; pointer-events: none !important; filter: grayscale(1); }
         .sold-out::after {
-            content: "HABIS";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-15deg);
-            color: #ff0000;
-            font-weight: 900;
-            font-size: 2rem;
-            border: 6px solid #ff0000;
-            padding: 5px 20px;
-            z-index: 100;
-            background: rgba(0,0,0,0.9);
-            white-space: nowrap;
+            content: "HABIS"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
+            color: #ff0000; font-weight: 900; font-size: 2rem; border: 6px solid #ff0000; padding: 5px 20px; z-index: 100;
+            background: rgba(0,0,0,0.9); white-space: nowrap;
         }
     </style>
 </head>
@@ -35,13 +20,13 @@
         <header class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
             <div>
                 <h1 class="text-2xl font-black text-yellow-400 italic">CARBOOT POS</h1>
-                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v28.0 • Accurate Report</p>
+                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v29.0 • Report Fixed</p>
             </div>
-            <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold active:scale-95 text-white uppercase">Refresh</button>
+            <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold text-white uppercase">Refresh</button>
         </header>
 
         <input type="text" id="searchInput" onkeyup="renderItems()" placeholder="Cari Kod (Cth: L1)..." 
-        class="w-full bg-slate-800 border-2 border-blue-900 rounded-2xl px-5 py-4 text-lg font-black outline-none focus:border-blue-500 shadow-2xl text-white">
+        class="w-full bg-slate-800 border-2 border-blue-900 rounded-2xl px-5 py-4 text-lg font-black outline-none focus:border-blue-500 text-white">
 
         <div id="item-container" class="space-y-3 mt-4"></div>
     </div>
@@ -49,38 +34,31 @@
     <div class="fixed bottom-0 left-0 right-0 bg-slate-800 p-5 border-t-4 border-yellow-500 z-[200] max-w-md mx-auto rounded-t-[2.5rem] shadow-2xl">
         <div class="grid grid-cols-3 gap-2 mb-4 text-center font-mono">
             <div class="bg-slate-900 p-2 rounded-xl border border-slate-700">
-                <span class="text-[8px] block text-slate-500 font-black uppercase">Subtotal</span>
-                <span id="subTotalDisplay" class="text-sm font-bold text-slate-300">RM 0.00</span>
+                <span class="text-[8px] block text-slate-500 font-black">SUBTOTAL</span>
+                <span id="subTotalDisplay" class="text-sm font-bold">RM 0.00</span>
             </div>
             <div class="bg-slate-900 p-2 rounded-xl border border-red-900/50">
-                <span class="text-[8px] block text-red-500 font-black uppercase">Diskaun</span>
+                <span class="text-[8px] block text-red-500 font-black">DISKAUN</span>
                 <span id="discountDisplay" class="text-sm font-bold text-red-400">-RM 0.00</span>
             </div>
             <div class="bg-slate-900 p-2 rounded-xl border border-green-900/50">
-                <span class="text-[8px] block text-green-500 font-black uppercase">Total</span>
+                <span class="text-[8px] block text-green-500 font-black">TOTAL</span>
                 <span id="grandTotal" class="text-lg font-black text-yellow-400">RM 0.00</span>
             </div>
         </div>
         
         <div class="grid grid-cols-2 gap-2 mb-4">
-            <div class="relative">
-                <span class="absolute top-1 left-3 text-[8px] font-bold text-slate-500 uppercase italic">Potong RM</span>
-                <input type="number" id="discountInput" oninput="calculate()" placeholder="0" class="w-full bg-red-900/20 text-red-100 rounded-xl px-4 pt-5 pb-2 text-center font-black border border-red-800 outline-none">
-            </div>
-            <div class="relative">
-                <span class="absolute top-1 left-3 text-[8px] font-bold text-slate-500 uppercase italic">Tunai RM</span>
-                <input type="number" id="cashInput" oninput="calculate()" placeholder="0" class="w-full bg-white text-slate-900 rounded-xl px-4 pt-5 pb-2 text-center font-black outline-none">
-            </div>
+            <input type="number" id="discountInput" oninput="calculate()" placeholder="Potong RM" class="bg-red-900/20 text-red-100 rounded-xl p-3 text-center font-black border border-red-800 outline-none">
+            <input type="number" id="cashInput" oninput="calculate()" placeholder="Tunai RM" class="bg-white text-slate-900 rounded-xl p-3 text-center font-black outline-none">
         </div>
 
-        <button id="btnCheckout" onclick="submitSale()" class="w-full bg-yellow-500 text-slate-900 font-black py-4 rounded-2xl shadow-xl text-xl uppercase active:scale-95 border-b-4 border-yellow-700 transition-all">
+        <button id="btnCheckout" onclick="submitSale()" class="w-full bg-yellow-500 text-slate-900 font-black py-4 rounded-2xl shadow-xl text-xl uppercase active:scale-95 border-b-4 border-yellow-700">
             SIMPAN JUALAN <span id="changeAmt" class="block text-[10px] font-normal lowercase italic">Baki: RM 0.00</span>
         </button>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbz-ucnu4gWqlteYtL4WJQDOu5BUIjsyoRKfI66mltT_ZO282qGGRETZ_yZ6r6FBFo-LLQ/exec";
-        
         let inventory = [];
         let cart = {}; 
         let isProcessing = false;
@@ -90,14 +68,13 @@
                 const res = await fetch(API_URL);
                 inventory = await res.json();
                 renderItems();
-            } catch (e) { console.error("Gagal tarik data."); }
+            } catch (e) { console.error("Error fetch data"); }
         }
 
         function renderItems() {
             const container = document.getElementById('item-container');
             const search = document.getElementById('searchInput').value.trim().toUpperCase();
             container.innerHTML = '';
-
             const filtered = inventory.filter(item => search === "" ? true : item.kod.toString().toUpperCase() === search);
 
             filtered.forEach(item => {
@@ -112,15 +89,15 @@
                         <div>
                             <div class="flex gap-2 mb-1">
                                 <span class="text-[10px] bg-blue-900 text-blue-100 px-2 py-0.5 rounded font-black font-mono">#${item.kod} SZ:${item.saiz}</span>
-                                <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black font-mono uppercase">Stok: ${bakiSkrin}</span>
+                                <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black">STOK: ${bakiSkrin}</span>
                             </div>
-                            <h3 class="font-bold text-slate-100 uppercase text-xs mt-1 truncate w-40">${item.nama}</h3>
-                            <p class="text-xl font-black text-yellow-400 mt-1">RM ${parseFloat(item.harga).toFixed(2)}</p>
+                            <h3 class="font-bold text-slate-100 uppercase text-xs truncate w-40">${item.nama}</h3>
+                            <p class="text-xl font-black text-yellow-400 font-mono">RM ${parseFloat(item.harga).toFixed(2)}</p>
                         </div>
-                        <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
-                            <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-slate-700 text-white font-black rounded-lg active:scale-90">-</button>
+                        <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl">
+                            <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-slate-700 text-white font-black rounded-lg">-</button>
                             <span class="w-6 text-center font-black text-blue-400 text-lg">${qInCart}</span>
-                            <button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-blue-600 text-white font-black rounded-lg active:scale-90" ${bakiSkrin <= 0 ? 'disabled opacity-20' : ''}>+</button>
+                            <button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-blue-600 text-white font-black rounded-lg" ${bakiSkrin <= 0 ? 'disabled opacity-20' : ''}>+</button>
                         </div>
                     </div>`;
             });
@@ -130,10 +107,7 @@
             const itemOrig = inventory.find(i => `${i.kod}-${i.saiz}` === id);
             if (!itemOrig) return;
             if (!cart[id]) { cart[id] = { ...itemOrig, qty: 0 }; }
-            if (val > 0 && cart[id].qty >= itemOrig.stok) {
-                alert("Stok tidak mencukupi!");
-                return;
-            }
+            if (val > 0 && cart[id].qty >= itemOrig.stok) return;
             cart[id].qty += val;
             if (cart[id].qty <= 0) delete cart[id];
             renderItems();
@@ -155,52 +129,35 @@
         async function submitSale() {
             const itemsInCart = Object.values(cart);
             if (itemsInCart.length === 0 || isProcessing) return;
-
             isProcessing = true;
             const btn = document.getElementById('btnCheckout');
-            btn.innerText = "PROSES SIMPAN...";
+            btn.innerText = "SIMPAN...";
             btn.disabled = true;
 
             const discVal = parseFloat(document.getElementById('discountInput').value) || 0;
             let totalKotor = 0;
             itemsInCart.forEach(i => totalKotor += (i.qty * parseFloat(i.harga)));
-            
-            // Faktor untuk tolak diskaun secara adil pada setiap baris item
             const discountFactor = totalKotor > 0 ? (totalKotor - discVal) / totalKotor : 1;
 
             const payload = itemsInCart.map(i => {
-                const hargaAsalBaris = (i.qty * parseFloat(i.harga));
-                const subtotalBersih = hargaAsalBaris * discountFactor;
-                
+                const subtotalBersih = (i.qty * parseFloat(i.harga)) * discountFactor;
                 return {
                     kod: i.kod,
-                    saiz_asal: i.saiz, 
+                    saiz: i.saiz, 
                     nama: i.nama,
                     qty: i.qty,
-                    subtotal: subtotalBersih.toFixed(2), // Ini yang akan masuk ke kolum Subtotal Sheets
-                    nota: discVal > 0 ? `Disc: RM${discVal} (Asal: RM${hargaAsalBaris.toFixed(2)})` : "-"
+                    subtotal: parseFloat(subtotalBersih.toFixed(2)),
+                    nota: discVal > 0 ? `Disc: RM${discVal}` : "-"
                 };
             });
 
             try {
-                await fetch(API_URL, { 
-                    method: 'POST', 
-                    mode: 'no-cors', 
-                    body: JSON.stringify(payload) 
-                });
-                
-                setTimeout(() => {
-                    alert("BERJAYA! Stok & Laporan dikemaskini.");
-                    location.reload(); 
-                }, 1500);
-
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                setTimeout(() => { alert("JUALAN BERJAYA!"); location.reload(); }, 1500);
             } catch (e) {
-                alert("Ralat! Sila refresh manual.");
-                isProcessing = false;
-                btn.disabled = false;
+                alert("Ralat sambungan!"); isProcessing = false; btn.disabled = false;
             }
         }
-
         fetchInventory();
     </script>
 </body>
