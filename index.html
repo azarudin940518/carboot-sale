@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Carboot PRO - V29.0</title>
+    <title>POS Carboot PRO - V31.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .sold-out { position: relative; opacity: 0.4; pointer-events: none !important; filter: grayscale(1); }
-        .sold-out::after {
-            content: "HABIS"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
-            color: #ff0000; font-weight: 900; font-size: 2rem; border: 6px solid #ff0000; padding: 5px 20px; z-index: 100;
-            background: rgba(0,0,0,0.9); white-space: nowrap;
+        .sold-out { position: relative; opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+        .sold-out::after { 
+            content: "HABIS"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); 
+            color: #ff0000; font-weight: 900; font-size: 2rem; border: 6px solid #ff0000; padding: 5px 20px; 
+            z-index: 100; background: rgba(0,0,0,0.9); white-space: nowrap;
         }
     </style>
 </head>
@@ -20,9 +20,9 @@
         <header class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
             <div>
                 <h1 class="text-2xl font-black text-yellow-400 italic">CARBOOT POS</h1>
-                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v29.0 • Report Fixed</p>
+                <p class="text-[9px] text-green-400 font-bold uppercase tracking-widest">v31.0 • Final Sync</p>
             </div>
-            <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold text-white uppercase">Refresh</button>
+            <button onclick="location.reload()" class="bg-slate-800 text-[10px] px-3 py-1 rounded-lg border border-slate-600 font-bold text-white uppercase active:scale-95">Refresh</button>
         </header>
 
         <input type="text" id="searchInput" onkeyup="renderItems()" placeholder="Cari Kod (Cth: L1)..." 
@@ -58,7 +58,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbz-ucnu4gWqlteYtL4WJQDOu5BUIjsyoRKfI66mltT_ZO282qGGRETZ_yZ6r6FBFo-LLQ/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwsXqtpBAFcpenKFP0wT5z87bNUiluR7f3-wN4_WAK_nnhAiQj92ieO-Qdw8S55R7lEYA/exec";
         let inventory = [];
         let cart = {}; 
         let isProcessing = false;
@@ -89,7 +89,7 @@
                         <div>
                             <div class="flex gap-2 mb-1">
                                 <span class="text-[10px] bg-blue-900 text-blue-100 px-2 py-0.5 rounded font-black font-mono">#${item.kod} SZ:${item.saiz}</span>
-                                <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black">STOK: ${bakiSkrin}</span>
+                                <span class="text-[10px] ${bakiSkrin <= 0 ? 'bg-red-600' : 'bg-green-700'} text-white px-2 py-0.5 rounded font-black uppercase">Stok: ${bakiSkrin}</span>
                             </div>
                             <h3 class="font-bold text-slate-100 uppercase text-xs truncate w-40">${item.nama}</h3>
                             <p class="text-xl font-black text-yellow-400 font-mono">RM ${parseFloat(item.harga).toFixed(2)}</p>
@@ -146,7 +146,7 @@
                     saiz: i.saiz, 
                     nama: i.nama,
                     qty: i.qty,
-                    subtotal: parseFloat(subtotalBersih.toFixed(2)),
+                    subtotal: Number(subtotalBersih.toFixed(2)), // Pastikan nombor bersih
                     nota: discVal > 0 ? `Disc: RM${discVal}` : "-"
                 };
             });
